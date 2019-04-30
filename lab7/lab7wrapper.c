@@ -5,8 +5,8 @@
 extern int lab7(void);
 extern int library_lab_7(void);
 extern void UART0Handler(void);
-extern void Timer0AHandler(void);
-extern void Timer0BHandler(void);
+extern void Timer0Handler(void);
+extern void Timer1Handler(void);
 
 
 int main(void)
