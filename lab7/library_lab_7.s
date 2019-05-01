@@ -76,17 +76,17 @@ game_play:
 keys:
 	CMP r9, #0x77						; w?
 	BEQ checkTop
-	;CMP r9, #0x61						; a?
-	;BEQ checkLeft
-	;CMP r9, #0x64						; d?
-	;BEQ checkRight
-	;CMP r9, #0x73						; s?
-	;BEQ checkBottom
+	CMP r9, #0x61						; a?
+	BEQ checkLeft
+	CMP r9, #0x64						; d?
+	BEQ checkRight
+	CMP r9, #0x73						; s?
+	BEQ checkBottom
 	B leave_game_play					; Nothing: exit routine, don't do anything
 
 checkTop:
-	CMP r7, #110
-	BEQ gator_to_home
+	CMP r7, #110						; Is score = 110? Frog is standing on alligator
+	BEQ gator_to_home					; Yes: make gator go to home if theres a space
 	CMP r7, #0							; Is score = 0? Frog is standing on init row
 	BEQ first_step_up					; Yes: go to first step up
 	; No: check if we can move up
@@ -94,7 +94,18 @@ checkTop:
 	CMP r1, #0x2E						; Is it a dot? (middle of board)
 	BEQ step_onto_midpoint				; Yes: step onto the midpoint part
 	CMP r1, #0x20						; Is it a space?
-	BNE check_object					; No: let's see what's in front
+	BEQ move_up							; No: let's see what's in front
+
+up_condition:
+	CMP r1, #0x54						; Turtle?
+	BEQ move_to_turtle
+	CMP r1, #0x4C						; Log?
+	BEQ turtle_to_log
+	CMP r1, #0x4F
+	BEQ log_to_lilypad					; Lilypad?
+	CMP r1, #0x61
+	BEQ lilypad_to_gator				; Gator body
+	B check_object
 
 move_up:								; Yes: move the frog up
 	ADD r7, r7, #10						; Increment score by 10
@@ -154,14 +165,119 @@ lilypad_to_gator:
 	B leave_game_play					; Exit routine
 
 gator_to_home:
-	ADD r7, r7, #10						; Increment score by 10
+	ADD r7, r7, #60						; Increment score by 10
 	MOV r1, #0x61						; Store a
 	STRB r1, [r8]						; Store a in current position
-	LDRB r2, [r8, #-49]						; Load next position
+	LDRB r2, [r8, #-49]					; Load next position
 	CMP r2, #0x20						; Is next position a space?
 	BNE leave_game_play					; No? Don't do anything. Exit routine
 	SUB r8, r8, #49						; Point to spot in front of frog
 	MOV r1, #0x48						; r1 = 'H' for home
+	STRB r1, [r8]						; Store frog in new position
+	B leave_game_play					; Exit routine
+
+checkRight:
+	LDRB r1, [r8, #1]					; Load what's on the right of current position
+	;CMP r1, #0x2E						; Is it a dot?
+	;BEQ move_right						; Yes: move frog right along dotted line
+	CMP r1, #0x20						; Is it a space?
+	BNE check_object					; No: check condition
+
+move_right:
+	STRB r1, [r8]
+	ADD r8, r8, #1
+	MOV r1, #0x26
+	STRB r1, [r8]
+	B leave_game_play
+
+checkLeft:
+	LDRB r1, [r8, #-1]					; Load what's on the right of current position
+	CMP r1, #0x20						; Is it a space?
+	BNE check_object					; No: check condition
+
+move_left:
+	STRB r1, [r8]
+	SUB r8, r8, #1
+	MOV r1, #0x26
+	STRB r1, [r8]
+	B leave_game_play
+
+checkBottom:
+	CMP r7, #0							; Is score = 0? Frog is standing on init row
+	BEQ leave_game_play					; Yes: Do nothing.
+	CMP r7, #10
+	BEQ move_down
+	CMP r7, #70							; Is the frog in the middle of the board? (Dotted line)
+	BEQ step_from_midpoint				; Yes: step down from the midpoint
+	LDRB r1, [r8, #49]					; Load what is in front of frog
+	CMP r1, #0x2E						; Is it a dot? (middle of board)
+	BEQ turtle_to_dot					; Yes: step onto the midpoint part
+
+	CMP r1, #0x20						; Is it a space?
+	BEQ move_down						; No: let's see what's in front
+
+down_condition:
+	CMP r1, #0x2E						; Turtle?
+	BEQ turtle_to_dot
+	CMP r1, #0x54						; Log?
+	BEQ log_to_turtle
+	CMP r1, #0x4C
+	BEQ lilypad_to_log					; Lilypad?
+	CMP r1, #0x4F
+	BEQ gator_to_lilypad				; Gator body
+	B check_object
+
+move_down:								; Yes: move the frog up
+	SUB r7, r7, #10						; Increment score by 10
+	MOV r1, #0x20						; r1 = space
+	STRB r1, [r8]						; Erase frog from current position
+	MOV r1, #0x26						; Yes: move frog up
+	ADD r8, r8, #49						; Point to spot in front of frog
+	STRB r1, [r8]						; Move frog up
+	B leave_game_play					; Exit routine
+
+step_from_midpoint:
+	SUB r7, r7, #10						; Increment score by 10
+	MOV r1, #0x2E						; Space
+	STRB r1, [r8]						; Store space in current position
+	ADD r8, r8, #49						; Point to spot in front of frog
+	MOV r1, #0x26						; r1 = &
+	STRB r1, [r8]						; Store frog in new position
+	B leave_game_play					; Exit routine
+
+turtle_to_dot:
+	SUB r7, r7, #10						; Decrement score by 10
+	MOV r1, #0x54						; Store T
+	STRB r1, [r8]						; Store T in current position
+	ADD r8, r8, #49						; Point to spot below the frog
+	MOV r1, #0x26						; Set r1 to frog
+	STRB r1, [r8]						; Store frog in new position
+	B leave_game_play					; Exit routine
+
+log_to_turtle:
+	SUB r7, r7, #10						; Decrement score by 10
+	MOV r1, #0x4C						; Store L
+	STRB r1, [r8]						; Store L in current position
+	ADD r8, r8, #49						; Point to spot below the frog
+	MOV r1, #0x26						; r1 = &
+	STRB r1, [r8]						; Store frog in new position
+	B leave_game_play					; Exit routine
+
+lilypad_to_log:
+	SUB r7, r7, #10						; Decrement score by 10
+	MOV r1, #0x4F						; Store O
+	STRB r1, [r8]						; Store O in current position
+	ADD r8, r8, #49						; Point to spot below the frog
+	MOV r1, #0x26						; r1 = &
+	STRB r1, [r8]						; Store frog in new position
+	B leave_game_play					; Exit routine
+
+gator_to_lilypad:
+	SUB r7, r7, #10						; Decrement score by 10
+	MOV r1, #0x61						; Store a
+	STRB r1, [r8]						; Store a in current position
+	ADD r8, r8, #49						; Point to spot in front of frog
+	MOV r1, #0x26						; r1 = &
 	STRB r1, [r8]						; Store frog in new position
 	B leave_game_play					; Exit routine
 
@@ -174,14 +290,11 @@ check_object:
 	BEQ stop_game						; Yes: you died
 	CMP r1, #0x41						; Then, is it a gator mouth?
 	BEQ stop_game						; Yes: you died
-	CMP r1, #0x54						; Turtle?
-	BEQ move_to_turtle
-	CMP r1, #0x4C						; Log?
-	BEQ turtle_to_log
-	CMP r1, #0x4F
-	BEQ log_to_lilypad					; Lilypad?
-	CMP r1, #0x61
-	BEQ lilypad_to_gator				; Gator body
+	CMP r9,	#0x64						; Was 'right' pressed initially?
+	BEQ move_right						; Proceed to move right
+	CMP r9, #0x61						; Was 'left' pressed initially?
+	BEQ move_left							; Proceed to move left
+
 	B leave_game_play
 
 stop_game:
@@ -264,6 +377,8 @@ move_with_alligator:
 	B leave_alligator_row
 
 reset_alligator_ptr:
+	CMP r7, #110
+	BEQ move_with_alligator
 	MOV r2, #0x00C5
 	MOVT r2, #0x2000				; beginning address of row
 
@@ -293,7 +408,7 @@ move_with_lilypad:
 reset_lilypad_ptr:
 	CMP r7, #100
 	BEQ move_with_lilypad
-	MOV r2, #0x00C5
+	MOV r2, #0x0122
 	MOVT r2, #0x2000				; beginning address of row
 
 leave_lilypad_row:
@@ -608,11 +723,11 @@ uart_init:
     MOV r1, #0					; Changes r1 to #0
     STR r1, [r2]				; Stores back into the address
 
-	; BAUD RATE: 360,500
+	; BAUD RATE: 460800
     MOV r2, #0xC024				; Baud Integer
     MOVT r2, #0x4000			; r2 = 0x4000C024
     LDR r1, [r2]				; Loads in the value in address r2 into r1
-    MOV r1, #4					; Changes r1 to #104
+    MOV r1, #2					; Changes r1 to #104
     STR r1, [r2]				; Stores back into the address
 
     MOV r2, #0xC028				; Baud Fractional
