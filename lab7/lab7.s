@@ -231,6 +231,7 @@ Timer0Handler:					; FROG
     STR r1, [r2]				; Stores back into the address
 
 	BL game_play
+	BL restart_cursor
 
 	LDMFD r13!, {r1,lr}
 	BX lr

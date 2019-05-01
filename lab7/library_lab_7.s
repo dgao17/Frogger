@@ -71,229 +71,127 @@ rloop:
 
 ;------------------------------- game play -------------------------------------------------
 game_play:
-	STMFD sp!, {r6, r10, lr}
+	STMFD sp!, {r1, r6, r10, lr}
 
 keys:
 	CMP r9, #0x77						; w?
 	BEQ checkTop
-	CMP r9, #0x61						; a?
-	BEQ checkLeft
-	CMP r9, #0x64						; d?
-	BEQ checkRight
-	CMP r9, #0x73						; s?
-	BEQ checkBottom
-	B clear
+	;CMP r9, #0x61						; a?
+	;BEQ checkLeft
+	;CMP r9, #0x64						; d?
+	;BEQ checkRight
+	;CMP r9, #0x73						; s?
+	;BEQ checkBottom
+	B leave_game_play					; Nothing: exit routine, don't do anything
 
-; ~~~~~ checkTop ~~~~~~
 checkTop:
-	LDRB r9, [r8]						; Takes current position
-	MOV r10, #0x2E						; r10 = '.'
-	CMP r7, #0							; Is r7 = 0? (score)
-	BEQ go								; Yes: branch to go
-	CMP r7, #70							; Is score = 70? (Middle of the board transitioning to pond)
-	BEQ go								; Yes: Keep the dot
-	MOV r10, #0x20
+	CMP r7, #110
+	BEQ gator_to_home
+	CMP r7, #0							; Is score = 0? Frog is standing on init row
+	BEQ first_step_up					; Yes: go to first step up
+	; No: check if we can move up
+	LDRB r1, [r8, #-49]					; Load what is in front of frog
+	CMP r1, #0x2E						; Is it a dot? (middle of board)
+	BEQ step_onto_midpoint				; Yes: step onto the midpoint part
+	CMP r1, #0x20						; Is it a space?
+	BNE check_object					; No: let's see what's in front
 
-	LDRB r11, [r8, #-49]				; Check what's in front of frog to see what object it's standing on
-	CMP r11, #0x2E
-	BEQ midboard
-	CMP r11, #0x20						; Is next position a space?
-	BNE game_over						; No: Check what condition.
-	STRB r11, [r8]						; Yes: move up a row
-	ADD r7, r7, #10						; Increment score
-	SUB r8, r8, #49
-	MOV r6, #0x26						; Yes: move '&' to r4
-	STRB r6, [r8]						; Store '&' at respective spot
+move_up:								; Yes: move the frog up
+	ADD r7, r7, #10						; Increment score by 10
+	MOV r1, #0x20						; r1 = space
+	STRB r1, [r8]						; Erase frog from current position
+	MOV r1, #0x26						; Yes: move frog up
+	SUB r8, r8, #49						; Point to spot in front of frog
+	STRB r1, [r8]						; Move frog up
+	B leave_game_play					; Exit routine
 
-	B clear								; Branch back to loop
+first_step_up:
+	ADD r7, r7, #10						; Increment score by 10
+	MOV r1, #0x2E						; Store .
+	STRB r1, [r8]						; Store . in current position
+	SUB r8, r8, #49						; Point to spot in front of frog
+	MOV r1, #0x26						; r1 = &
+	STRB r1, [r8]						; Store frog in new position
+	B leave_game_play					; Exit routine
 
-midboard:
-	STRB r10, [r8]						; Store space at current position
-	MOV r11, #0x26
-	STRB r11, [r8, #-49]!
-	ADD r7, r7, #10
-	B clear
+step_onto_midpoint:
+	ADD r7, r7, #10						; Increment score by 10
+	MOV r1, #0x20						; Space
+	STRB r1, [r8]						; Store space in current position
+	SUB r8, r8, #49						; Point to spot in front of frog
+	MOV r1, #0x26						; r1 = &
+	STRB r1, [r8]						; Store frog in new position
+	B leave_game_play					; Exit routine
 
-go:
-	STRB r10, [r8]						; Store "previous" into current position
-	SUB r8, r8, #49
-	LDRB r11, [r8]						; Check space user wants to go to
-	CMP r11, #0x20
-	BNE game_over						; Check if it's a car or truck
-	ADD r7, r7, #10						; Score incremented by 10
-	MOV r6, #0x26						; Yes: move '&' to r4
-	STRB r6, [r8]						; Store '&' at respective spot
+move_to_turtle:
+	B first_step_up						; Same method
 
-	B clear								; Branch back to loop
+turtle_to_log:
+	ADD r7, r7, #10						; Increment score by 10
+	MOV r1, #0x54						; Store T
+	STRB r1, [r8]						; Store T in current position
+	SUB r8, r8, #49						; Point to spot in front of frog
+	MOV r1, #0x26						; r1 = &
+	STRB r1, [r8]						; Store frog in new position
+	B leave_game_play					; Exit routine
 
-; ~~~~~ checkLeft ~~~~~~
-checkLeft:
-	LDRB r9, [r8]						; Takes current position
-	MOV r10, #0x2E						; r10 = '.'
-	CMP r7, #0							; Is r7 = 0? (score)
-	BEQ go1								; Yes: branch to go
-	CMP r7, #70							; Is score = 70? (Middle of the board transitioning to pond)
-	BEQ go1								; Yes: Keep the dot
-	MOV r10, #0x20
+log_to_lilypad:
+	ADD r7, r7, #10						; Increment score by 10
+	MOV r1, #0x4C						; Store L
+	STRB r1, [r8]						; Store L in current position
+	SUB r8, r8, #49						; Point to spot in front of frog
+	MOV r1, #0x26						; r1 = &
+	STRB r1, [r8]						; Store frog in new position
+	B leave_game_play					; Exit routine
 
-	LDRB r11, [r8, #-1]				; Check what's in front of frog to see what object it's standing on
-	CMP r11, #0x2E
-	BEQ go1
-	CMP r11, #0x20						; Is next position a space
-	BNE game_over						; No? Check what condition.
+lilypad_to_gator:
+	ADD r7, r7, #10						; Increment score by 10
+	MOV r1, #0x4F						; Store O
+	STRB r1, [r8]						; Store O in current position
+	SUB r8, r8, #49						; Point to spot in front of frog
+	MOV r1, #0x26						; r1 = &
+	STRB r1, [r8]						; Store frog in new position
+	B leave_game_play					; Exit routine
 
-go1:
-	LDRB r10, [r8, #-1]					; Load what's in new spot
-	CMP r10, #0x7C						; Is it a side border?
-	BEQ keys							; Yes: don't move
-	STRB r10, [r8]						; Store "previous" into current position
-	SUB r8, r8, #1
+gator_to_home:
+	ADD r7, r7, #10						; Increment score by 10
+	MOV r1, #0x61						; Store a
+	STRB r1, [r8]						; Store a in current position
+	LDRB r2, [r8, #-49]						; Load next position
+	CMP r2, #0x20						; Is next position a space?
+	BNE leave_game_play					; No? Don't do anything. Exit routine
+	SUB r8, r8, #49						; Point to spot in front of frog
+	MOV r1, #0x48						; r1 = 'H' for home
+	STRB r1, [r8]						; Store frog in new position
+	B leave_game_play					; Exit routine
 
-	MOV r6, #0x26						; r10 = frog
-	STRB r6, [r8]						; Store frog in new spot
-
-	B clear
-
-; ~~~~~ checkRight ~~~~~~
-checkRight:
-	LDRB r9, [r8]						; Takes current position
-	MOV r10, #0x2E						; r10 = '.'
-	CMP r7, #0							; Is r7 = 0? (score)
-	BEQ go2								; Yes: branch to go
-	CMP r7, #70							; Is score = 70? (Middle of the board transitioning to pond)
-	BEQ go2								; Yes: Keep the dot
-	MOV r10, #0x20
-
-	LDRB r11, [r8, #1]				; Check what's in front of frog to see what object it's standing on
-	CMP r11, #0x2E
-	BEQ go2
-	CMP r11, #0x20						; Is next position a space
-	BNE game_over						; No? Check what condition.
-
-go2:
-	LDRB r10, [r8, #1]					; Load what's in new spot
-	CMP r10, #0x7C						; Is it a side border?
-	BEQ keys							; Yes: don't move
-	STRB r10, [r8]						; Store original value in old spot
-	ADD r8, r8, #1						; Increment address to right
-
-	MOV r6, #0x26						; r10 = frog
-	STRB r6, [r8]						; Store frog in new spot
-
-	B clear
-
-; ~~~~~ checkBottom ~~~~~~
-checkBottom:
-	LDRB r9, [r8]						; Takes current position
-	MOV r10, #0x2E						; r10 = '.'
-	CMP r7, #0							; Is r7 = 0? (score)
-	BEQ keys							; Yes: branch to keys, don't move
-	CMP r7, #70							; Is score = 70? (Middle of the board transitioning to pond)
-	BEQ goo								; Yes: Keep the dot
-	CMP r7, #10
-	BEQ back_to_start
-	MOV r10, #0x20
-
-	LDRB r11, [r8, #49]					; Check what's behind frog to see what object it's standing on
-	CMP r11, #0x2E
-	BEQ goo
-	CMP r11, #0x20						; Is next position a space?
-	BNE game_over						; No: Check what condition.
-	STRB r11, [r8]
-	ADD r8, r8, #49
-	SUB r7, r7, #10
-	MOV r6, #0x26						; Yes: move '&' to r4
-	STRB r6, [r8]						; Store '&' at respective spot
-
-	B clear								; Branch back to loop
-
-back_to_start:
-	MOV r10, #0x20						; Store space in current space
-	STRB r10, [r8]
-	ADD r8, r8, #49
-	MOV r10, #0x26
-	STRB r10, [r8]
-	SUB r7, r7, #10
-	B clear
-
-goo:
-	STRB r10, [r8]						; Store "previous" into current position
-	ADD r8, r8, #49
-	LDRB r11, [r8]						; Check space user wants to go to
-	CMP r11, #0x20
-	BNE game_over						; Check if it's a car or truck
-	SUB r7, r7, #10						; Score decremented by 10
-	MOV r6, #0x26						; Yes: move '&' to r4
-	STRB r6, [r8]						; Store '&' at respective spot
-
-	B clear								; Branch back to loop
-
-game_over:
-	CMP r11, #0x7E						; Then, is it water? (~)
+check_object:
+	CMP r1, #0x7E						; Then, is it water? (~)
 	BEQ stop_game						; Yes: you died
-	CMP r11, #0x43						; Then, is it a car? (C)
+	CMP r1, #0x43						; Then, is it a car? (C)
 	BEQ stop_game						; Yes: you died
-	CMP r11, #0x23						; Then, is it a truck? (#)
+	CMP r1, #0x23						; Then, is it a truck? (#)
 	BEQ stop_game						; Yes: you died
-	CMP r11, #0x41						; Then, is it a gator mouth?
+	CMP r1, #0x41						; Then, is it a gator mouth?
 	BEQ stop_game						; Yes: you died
-	B clear
+	CMP r1, #0x54						; Turtle?
+	BEQ move_to_turtle
+	CMP r1, #0x4C						; Log?
+	BEQ turtle_to_log
+	CMP r1, #0x4F
+	BEQ log_to_lilypad					; Lilypad?
+	CMP r1, #0x61
+	BEQ lilypad_to_gator				; Gator body
+	B leave_game_play
 
-;--------------------------- stop the game ----------------------------------------------
-; Game is stopped when player loses. Disables timer and what not.
 stop_game:
-	MOV r2, #0x0014
-    MOVT r2, #0x2000			; 0x20000014
-	LDRB r1, [r2]
-	SUB r1, r1, #1
-	STRB r1, [r2]				; Decrement lives
-	BL illuminate_LEDs
+	B end_game
 
-	CMP r1, #0x30				; Any lives left?
-	BNE new_life				; Yes: start round again
-
-    MOV r2, #0xE100
-	MOVT r2, #0xE000
-	LDR r1, [r2]
-	AND r1, r1, #0x0
-	STR r1, [r2]
-
-	BL output_string			; Ends the game & displays score
-	BL restart_cursor
-	B abc
-
-clear:
-	BL restart_cursor			; Refresh board & leave subroutine
-	MOV r2, #0x0D0F				; Check state
-    MOVT r2, #0x2000
-    LDRB r3, [r2]
-    CMP r3, #0x31
-	BEQ display_board
-	MOV r9, #0x0
-	B abc
-
-display_board:
-	BL displayBoard
-	B abc
-
-new_life:
-	MOV r2, #0x20
-	STRB r2, [r8]				; Erase frog from current position
-	LDR r8, head				; Point back at start position
-	BL random_frog_position
-	BL illuminate_LEDs
-	MOV r2, #0x0D0F
-	MOVT r2, #0x2000
-	MOV r4, #0x31
-	STRB r4, [r2]
-	BL illuminate_RGB_LED
-	MOV r9, #0					; reset r9
-	MOV r7, #0
+leave_game_play:
+	MOV r9, #0
 	BL restart_cursor
 	BL displayBoard
-
-abc:
-	LDMFD sp!, {r6, r10, lr}
+	LDMFD sp!, {r1, r6, r10, lr}
 	mov pc, lr
 
 ;---------------------------- pause game -----------------------------------------
@@ -361,10 +259,15 @@ move_alligator:
 	ADD r2, r2, #1					; Increment pointer
 	B move_alligator				; Go to check rest of the row
 
+move_with_alligator:
+	SUB r8, r8, #1
+	B leave_alligator_row
+
 reset_alligator_ptr:
 	MOV r2, #0x00C5
-	MOVT r2, #0x2000		; beginning address of row
+	MOVT r2, #0x2000				; beginning address of row
 
+leave_alligator_row:
 	LDMFD sp!, {lr}
 	mov pc, lr
 
@@ -383,10 +286,17 @@ move_lilypads:
 	SUB r2, r2, #1					; Increment pointer
 	B move_lilypads					; Go to check rest of the row
 
+move_with_lilypad:
+	ADD r8, r8, #1
+	B leave_lilypad_row
+
 reset_lilypad_ptr:
+	CMP r7, #100
+	BEQ move_with_lilypad
 	MOV r2, #0x00C5
 	MOVT r2, #0x2000				; beginning address of row
 
+leave_lilypad_row:
 	LDMFD sp!, {lr}
 	mov pc, lr
 
@@ -403,12 +313,19 @@ move_logs:
 	BEQ reset_log_ptr				; Yes: point back to beginning of row
 	STRB r1, [r2] 					; No: store in current spot
 	ADD r2, r2, #1					; Increment pointer
-	B move_logs					; Go to check rest of the row
+	B move_logs						; Go to check rest of the row
+
+frog_left:
+	SUB r8, r8, #1
+	B leave_log_row
 
 reset_log_ptr:
+	CMP r7, #90						; Is frog on this row?
+	BEQ frog_left
 	MOV r2, #0x0127
 	MOVT r2, #0x2000				; beginning address of row
 
+leave_log_row:
 	LDMFD sp!, {lr}
 	mov pc, lr
 
@@ -427,10 +344,17 @@ move_turtles:
 	SUB r2, r2, #1					; Increment pointer
 	B move_turtles					; Go to check rest of the row
 
+frog_right:
+	ADD r8, r8, #1
+	B leave_move_turtles
+
 reset_turtle_ptr:
+	CMP r7, #80						; Is frog on this row?
+	BEQ frog_right
 	MOV r2, #0x0184
 	MOVT r2, #0x2000				; beginning address of row
 
+leave_move_turtles:
 	LDMFD sp!, {lr}
 	mov pc, lr
 
@@ -523,7 +447,7 @@ stopGame:
 	BL illuminate_LEDs
 
 	CMP r1, #0x30						; Any lives left?
-	BNE new_life						; Yes: start round again
+	BNE newLife						; Yes: start round again
 
     MOV r2, #0xE100
 	MOVT r2, #0xE000
@@ -684,7 +608,7 @@ uart_init:
     MOV r1, #0					; Changes r1 to #0
     STR r1, [r2]				; Stores back into the address
 
-	; BAUD RATE: 230,400
+	; BAUD RATE: 360,500
     MOV r2, #0xC024				; Baud Integer
     MOVT r2, #0x4000			; r2 = 0x4000C024
     LDR r1, [r2]				; Loads in the value in address r2 into r1
@@ -694,7 +618,7 @@ uart_init:
     MOV r2, #0xC028				; Baud Fractional
     MOVT r2, #0x4000			; r2 = 0x4000C028
     LDR r1, [r2]				; Loads in the value in address r2 into r1
-    MOV r1, #22					; Changes r1 to #11
+    MOV r1, #11					; Changes r1 to #11
     STR r1, [r2]				; Stores back into the address
 
     MOV r2, #0xCFC8
