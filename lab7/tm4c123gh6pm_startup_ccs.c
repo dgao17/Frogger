@@ -36,6 +36,7 @@ static void IntDefaultHandler(void);
 extern void UART0Handler(void);
 extern void Timer0Handler(void);
 extern void Timer1Handler(void);
+extern void Timer2Handler(void);
 
 //*****************************************************************************
 //
@@ -109,7 +110,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // Timer 0 subtimer B
     Timer1Handler,                          // Timer 1 subtimer A
     IntDefaultHandler,                      // Timer 1 subtimer B
-    IntDefaultHandler,                      // Timer 2 subtimer A
+    Timer2Handler,                          // Timer 2 subtimer A
     IntDefaultHandler,                      // Timer 2 subtimer B
     IntDefaultHandler,                      // Analog Comparator 0
     IntDefaultHandler,                      // Analog Comparator 1

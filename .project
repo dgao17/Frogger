@@ -3,6 +3,7 @@
 	<name>Frogger</name>
 	<comment></comment>
 	<projects>
+		<project>lab7</project>
 	</projects>
 	<buildSpec>
 	</buildSpec>
