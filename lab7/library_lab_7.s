@@ -28,6 +28,7 @@
 	.global move_turtle_row
 
 head: .word 0x200002F6
+lives2: .word 0x200009DA
 ;------------------------- output character --------------------------------------------
 ; output_character transmits a character from the UART to PuTTy. The character is passed in r0.
 output_character:
@@ -493,6 +494,17 @@ loop:									; Started from top left corner of road board
 	BEQ ignore							; Yes: ignore the space
 	CMP r3, #0x7E						; Is it water?
 	BEQ ignore							; Yes: ignore the water
+	CMP r3, #0x54						; Is it a Turtle?
+	BEQ ignore  						; Yes: ignore the turtle
+	CMP r3, #0x4C						; Is it a Log
+	BEQ ignore							; Yes: ignore the log
+	CMP r3, #0x4F						; Is it a lilypad?
+	BEQ ignore							; Yes: ignore the lilypad
+	CMP r3, #0x41						; Is it alligator head?
+	BEQ ignore							; Yes: ignore.
+	CMP r3, #0x61						; Is it alligator body?
+	BEQ ignore							; Yes: ignore
+
 	B checkObject						; No: MUST be car or truck or water thing
 
 ignore:
@@ -554,21 +566,8 @@ reset_pointer:							; Reverts r4 to the address of the top left corner of road 
 	B leave_move_objects
 
 stopGame:
-    MOV r2, #0x0014
-    MOVT r2, #0x2000					; 0x20000014
-	LDRB r1, [r2]
-	SUB r1, r1, #1
-	STRB r1, [r2]						; Decrement lives
-	BL illuminate_LEDs
-
-	CMP r1, #0x30						; Any lives left?
+    CMP r1, #0x30						; Any lives left?
 	BNE newLife						; Yes: start round again
-
-    MOV r2, #0xE100
-	MOVT r2, #0xE000
-	LDR r1, [r2]
-	AND r1, r1, #0x0
-	STR r1, [r2]
 
 	MOV r4, #0x00C5
 	MOVT r4, #0x2000
@@ -576,8 +575,23 @@ stopGame:
 	B leave_move_objects
 
 newLife:
+	MOV r1, #0x20
+	STRB r1, [r8]
+	BL new_game
 	BL random_frog_position
+
+	MOV r2, #0x0014
+    MOVT r2, #0x2000					; 0x20000014
+	LDRB r1, [r2]
+	SUB r1, r1, #1
+	STRB r1, [r2]						; Decrement lives
+	LDR r2, lives2
+	LDRB r1, [r2]
+	SUB r1, r1, #1
+	STRB r1, [r2]
+
 	BL illuminate_LEDs
+
 	MOV r2, #0x0D0F
 	MOVT r2, #0x2000
 	MOV r4, #0x31
@@ -585,6 +599,7 @@ newLife:
 	BL illuminate_RGB_LED
 	MOV r9, #0							; reset r9
 	MOV r7, #0
+	MOV r11, #60
 	BL restart_cursor
 	BL displayBoard
 
