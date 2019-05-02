@@ -129,6 +129,7 @@ game_board: .word Border3
 truck: .word trucks
 turtle: .word turtles
 lives: .word 0x20000014
+lives2: .word 0x200009DA
 score: .word 0x2000002b
 
 
@@ -169,13 +170,14 @@ UART0Handler:
 	B exit_interrupt
 
 start:
+	MOV r1, #4					; Lives = 4
 	BL illuminate_LEDs
 	MOV r2, #0x0D0F
 	MOVT r2, #0x2000
 	MOV r4, #0x31
 	STRB r4, [r2]
 	BL illuminate_RGB_LED
-	MOV r1, #4					; Lives = 4
+
 	BL timer_init				; initialize timer setup & config
 	BL restart_cursor			; Reposition cursor at beginning of terminal
 	BL displayBoard				; Redisplay the board
@@ -232,7 +234,10 @@ Timer0Handler:					; FROG
 
 	BL game_play
 	BL restart_cursor
+	BL move_objects
+	BL random
 
+   ;BL displayBoard
 	LDMFD r13!, {r1,lr}
 	BX lr
 
@@ -247,10 +252,6 @@ Timer1Handler:					; MAP REFRESH
     ORR r1, r1, #0x1			; Changes r1 to #1
     STR r1, [r2]				; Stores back into the address
 
-	BL restart_cursor
-    BL displayBoard
-    BL move_objects
-    BL random
     BL move_alligator_row
     BL move_lilypad_row
     BL move_log_row
@@ -259,7 +260,8 @@ Timer1Handler:					; MAP REFRESH
     BL random_log
     BL random_lilypad
     BL random_alligator
-
+	BL restart_cursor
+    BL displayBoard
 
 	LDMFD r13!, {lr}
 	BX lr
@@ -310,6 +312,7 @@ Timer2Handler:					; GAME TIME
     STR r4, [r2]				; Stores back into the address
 
 	MOV r7, r11
+
 	BL displayTime
 
 	LDMFD r13!, {r4, r6, r7, r10, lr}
@@ -394,6 +397,9 @@ complete:
 	LDR r4, lives				; address of where the # of lives is displayed
 	MOV r0, #0x34				; r0 = 4 ASCII
 	STRB r0, [r4]				; Set lives to 4 at the start of the game
+	LDR r4, lives2				; Store lives into new screen place too
+	STRB r0, [r4]
+
 
 	LDMFD sp!, {r0, r4, lr}
 	mov pc, lr
@@ -520,8 +526,8 @@ generate_truck:
 	STRB r3, [r10]				; store byte
 
 leave:
-	;BL restart_cursor
-	;BL displayBoard
+	BL restart_cursor
+	BL displayBoard
 
 leave_random:
     LDMFD sp!, {r1-r3, lr}
@@ -555,6 +561,8 @@ left:
 	STRB r4, [r8]
 
 leave_random_frog_pos:
+	BL restart_cursor
+    BL displayBoard
 	LDMFD sp!, {r1-r4, lr}
 	mov pc, lr
 
@@ -598,6 +606,8 @@ add_water:
 	B leave_random_turtle
 
 leave_random_turtle:
+	BL restart_cursor
+    BL displayBoard
 	LDMFD sp!, {r1-r3, lr}
 	mov pc, lr
 
@@ -655,6 +665,8 @@ add_water2:
 	B leave_random_log
 
 leave_random_log:
+	BL restart_cursor
+    BL displayBoard
 	LDMFD sp!, {r1-r3, lr}
 	mov pc, lr
 
@@ -697,6 +709,8 @@ add_water3:
 	B leave_random_turtle
 
 leave_random_lilypad:
+	BL restart_cursor
+    BL displayBoard
 	LDMFD sp!, {r1-r3, lr}
 	mov pc, lr
 
@@ -715,19 +729,22 @@ random_alligator:
 	LDRB r1, [r2]				; Check if we were still generating a log from previous refresh
 	CMP r1, #0x41				; Is it a A?
 	BEQ add_water4				; Add water to the left of it
-	LDRB r1, [r2, #1]!
+	LDRB r1, [r2]
 	CMP r1, #0x61				; 3rd spot
 	BEQ leave_random_gator
-	LDRB r1, [r2, #1]!
+	LDRB r1, [r2, #1]
 	CMP r1, #0x61				; 4th
 	BEQ leave_random_gator
-	LDRB r1, [r2, #1]!
+	LDRB r1, [r2, #2]
 	CMP r1, #0x61				; 5th
 	BEQ leave_random_gator
-	LDRB r1, [r2, #1]!
+	LDRB r1, [r2, #3]
 	CMP r1, #0x61				; 6th
 	BEQ leave_random_gator
-	LDRB r1, [r2, #1]!
+	LDRB r1, [r2, #4]
+	CMP r1, #0x61				; 7th
+	BEQ leave_random_gator
+	LDRB r1, [r2, #5]
 	CMP r1, #0x61				; 7th
 	BEQ leave_random_gator
 
@@ -762,5 +779,7 @@ add_water4:
 	B leave_random_gator
 
 leave_random_gator:
+	BL restart_cursor
+    BL displayBoard
 	LDMFD sp!, {r1-r3, lr}
 	mov pc, lr
