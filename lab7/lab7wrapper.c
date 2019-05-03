@@ -8,6 +8,7 @@ extern void UART0Handler(void);
 extern void Timer0Handler(void);
 extern void Timer1Handler(void);
 extern void Timer2Handler(void);
+extern void PortAHandler(void);
 
 int main(void)
 {
