@@ -19,7 +19,7 @@ Border13:		.string "|                                             |", 0xD,0xA
 Border14:		.string "|......................&......................|", 0xD,0xA
 bottom:			.string "|---------------------------------------------|", 0,0xD,0xA
 
-startscreen:	.string " Timer:      Lives:      Level: 0   Score:     ", 0xD,0xA
+startscreen:		.string " Timer:      Lives:      Level: 0   Score:     ", 0xD,0xA
 Border:			.string "|---------------------------------------------|", 0xD,0xA
 Border15:		.string "|                                             |", 0xD,0xA
 Border16:		.string "| :::: ::::: :::::: :::::: :::::: :::: :::::  |", 0xD,0xA
@@ -76,10 +76,10 @@ bottom3:		.string "|---------------------------------------------|", 0,0xD,0xA
 trucks: 		.string "#### ", 0
 alligators:		.string "Aaaaaaa", 0
 turtles: 		.string " TT", 0
-gameState:      .string "0", 0
+gameState:      	.string "0", 0
 level:			.string "0", 0
 wins:			.string "0", 0
-instructions:	.string 0xD, 0xA ," Objective: Get 2 frogs home while avoiding", 0xD, 0xA,  " cars, trucks, and alligator mouths to advance", 0xD, 0xA,  " to the next level"
+instructions:		.string 0xD, 0xA ," Objective: Get 2 frogs home while avoiding", 0xD, 0xA,  " cars, trucks, and alligator mouths to advance", 0xD, 0xA,  " to the next level"
 points1:		.string 0xD, 0xA, " Moving up: 10 points"
 points2:		.string 0xD, 0xA, " Safely getting a frog home: 50 points"
 points3:		.string 0xD, 0xA, " Each second of unused time: 10 points"
@@ -176,11 +176,11 @@ game_ptr: 		.word info
 end_scr: 		.word info2
 new_scr: 		.word info3
 start_scr: 		.word startscreen
-paused_game:	.word paused
+paused_game:		.word paused
 quit_game:		.word quit
 head: 			.word 0x200002F6
 fly: 			.word 0x20000094
-game_board: 	.word Border3
+game_board: 		.word Border3
 truck: 			.word trucks
 turtle: 		.word turtles
 lives: 			.word 0x20000014
